@@ -271,10 +271,115 @@ across all available company-year observations in the dataset.
 
 
 @app.cell
-def _(mo, tab_profile, tab_sector):
+def _(mo, vk_df):
+    _sectors = sorted(vk_df["Sector_Key"].unique().tolist())
+
+    sector_pick = mo.ui.dropdown(
+        options=_sectors,
+        value=_sectors[0],
+        label="Select Sector",
+    )
+    zscore_min = mo.ui.slider(
+        start=-5.0, stop=15.0, step=0.5, value=0.0,
+        label="Minimum Z-Score",
+    )
+    return sector_pick, zscore_min
+
+
+@app.cell
+def _(sector_pick, vk_df, zscore_min):
+    expl_df = vk_df[
+        (vk_df["Sector_Key"] == sector_pick.value) &
+        (vk_df["Z_Score_lag"] >= zscore_min.value)
+    ].copy()
+    n_expl = len(expl_df)
+    return expl_df, n_expl
+
+
+@app.cell
+def _(expl_df, mo, n_expl, px, sector_pick, top_companies):
+    # Scatter: X = Z-Score, Y = Market Cap, colour = cost of debt gradient
+    # Analytically different question: do financially healthier firms tend to be larger?
+    fig_expl = px.scatter(
+        expl_df,
+        x="Z_Score_lag",
+        y="mcap_bn",
+        color="cost_pct",
+        color_continuous_scale="RdYlGn",
+        hover_name="Name",
+        hover_data={"Ticker": True, "cost_pct": ":.2f", "mcap_bn": ":.1f",
+                    "Sector_Key": False},
+        title=f"{sector_pick.value} — Z-Score vs Market Cap  ({n_expl} observations)",
+        labels={
+            "Z_Score_lag": "Altman Z-Score",
+            "mcap_bn":     "Market Cap (Bn USD)",
+            "cost_pct":    "Cost of Debt (%)",
+        },
+        template="plotly_white",
+        width=880,
+        height=520,
+    )
+    fig_expl.update_traces(marker=dict(size=8, opacity=0.75))
+    fig_expl.update_coloraxes(colorbar_title="Cost of Debt (%)")
+    chart_expl = mo.ui.plotly(fig_expl)
+
+    # Sunburst: top companies by market cap within all sectors
+    _sun_df = top_companies.copy()
+    fig_sun = px.sunburst(
+        _sun_df,
+        path=["Sector", "Company"],
+        values="Avg_MCap_Bn",
+        color="Avg_MCap_Bn",
+        color_continuous_scale="Blues",
+        title="Top 5 Companies per Sector by Average Market Cap",
+        width=820,
+        height=560,
+    )
+    fig_sun.update_traces(textinfo="label+percent parent")
+    chart_sun = mo.ui.plotly(fig_sun)
+
+    return chart_expl, chart_sun
+
+
+@app.cell
+def _(chart_expl, chart_sun, mo, sector_pick, zscore_min):
+    tab_explorer = mo.vstack([
+        mo.md("## Company Explorer"),
+        mo.md(
+            "Select a sector and a minimum Z-Score threshold to explore individual "
+            "company positions. The scatter chart plots credit health against firm "
+            "size, using cost of debt as a continuous colour gradient. "
+            "The sunburst shows the largest companies across all sectors."
+        ),
+        mo.hstack([sector_pick, zscore_min], gap=3),
+        mo.md("### Z-Score vs Market Cap (colour = Cost of Debt)"),
+        chart_expl,
+        mo.md("""
+**Skills demonstrated:**
+- mo.ui.dropdown single-sector selection — Week 4
+- mo.ui.slider Z-Score threshold filtering — Week 4
+- px.scatter with continuous color_continuous_scale gradient — self-exploration
+- RdYlGn colour scale mapping cost of debt to colour intensity — self-exploration
+        """),
+        mo.md("---"),
+        mo.md("### Market Cap Distribution: Top 5 Companies per Sector"),
+        chart_sun,
+        mo.md("""
+**Skills demonstrated:**
+- px.sunburst hierarchical chart with path=[Sector, Company] — self-exploration
+- Blues sequential colour scale for market cap magnitude — self-exploration
+- pandas groupby().apply(lambda g: g.head(5)) for top-N selection — Week 4
+        """),
+    ])
+    return (tab_explorer,)
+
+
+@app.cell
+def _(mo, tab_explorer, tab_profile, tab_sector):
     app_tabs = mo.ui.tabs({
         "Profile":          tab_profile,
         "Sector Dashboard": tab_sector,
+        "Company Explorer": tab_explorer,
     })
     mo.md(f"""
 # Vanesh Kumar
