@@ -562,11 +562,54 @@ def _(chart_esg, chart_hist, ctx_wgt, mo, prompt_panel,
 
 @app.cell
 def _(mo, tab_explorer, tab_profile, tab_research, tab_sector):
+    tab_background = mo.md("""
+## Background and Interests
+
+**About Me**
+
+I am Vanesh Kumar, a first-year BSc Accounting and Finance student at
+City St Georges, University of London (Bayes Business School). I came to
+the UK after completing my foundation year at Durham University and my
+A-Levels in Pakistan, where I developed an early interest in quantitative
+analysis through Mathematics and Computer Science.
+
+My two internships in Pakistan, at United Agro Chemicals and SGM Sugar Mills,
+gave me direct exposure to real-world accounting workflows: maintaining ledgers,
+checking invoices, and reviewing expense reports. Working in those environments
+taught me the value of precision and systematic thinking in financial operations.
+
+---
+
+**Why Data Science and Finance**
+
+The AF1204 module has been a turning point in connecting my finance background
+with computational tools. Learning Python, pandas, and Plotly has allowed me to
+move from manually handling spreadsheets to building interactive analyses of
+large financial datasets. I am particularly interested in applying these tools
+to equity research and financial risk assessment.
+
+---
+
+**Career Direction**
+
+Financial markets and equity analysis, with a focus on developing quantitative
+skills that complement traditional accounting knowledge. I aim to build
+capability in both financial modelling and data-driven analysis.
+
+---
+
+**Current Extracurricular Focus**
+
+- Exploring accounting concepts and financial statements through online resources
+- Practising Python and Excel to improve data handling and numerical skills
+- Following business and finance content to develop commercial awareness
+    """)
     app_tabs = mo.ui.tabs({
         "Profile":          tab_profile,
         "Sector Dashboard": tab_sector,
         "Company Explorer": tab_explorer,
         "Research":         tab_research,
+        "Background":       tab_background,
     })
     mo.md(f"""
 # Vanesh Kumar
